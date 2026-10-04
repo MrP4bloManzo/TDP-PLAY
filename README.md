@@ -1,38 +1,35 @@
 # TDP PLAY
-*Fútbol. Pronósticos. Diversión.* — Simulador deportivo y de casino con **TDP Coins** (moneda virtual sin valor monetario).
+*Fútbol. Pronósticos. Diversión.* — Simulador deportivo y de casino con **TDP Coins** (moneda virtual).
 
 > Esta plataforma es un simulador de entretenimiento. Las TDP Coins son virtuales, no tienen valor monetario y no pueden comprarse, venderse, retirarse ni canjearse por dinero.
 > Proyecto demostrativo independiente. No afiliado oficialmente a la Liga TDP.
 
-## Tecnologías
-Next.js (App Router) · TypeScript · Tailwind CSS · Prisma · PostgreSQL · Zod · JWT + bcrypt · Vitest · Playwright
+Sitio 100% estático (Next.js + Tailwind): **sin servidor ni base de datos**. Tu saldo, historial y pronósticos se guardan en el `localStorage` de tu navegador (reinicia desde `/wallet`). Equipos y partidos son datos de prueba.
 
-## Instalación
-Requisitos: Node.js LTS, npm, Docker (o PostgreSQL local).
+## Correr local
 ```bash
 npm install
-cp .env.example .env.local   # DATABASE_URL, AUTH_SECRET
-cp .env.local .env           # Prisma CLI lee .env
-docker compose up -d
-npx prisma generate
-npx prisma migrate dev
-npx prisma db seed
-npm run dev                  # http://localhost:3000
+npm run dev        # http://localhost:3000
+npm test           # pruebas de blackjack y ruleta
 ```
-Cuentas de desarrollo: `demo@tdpplay.local / Demo123!` · `admin@tdpplay.local / Admin123!`
 
-## Scripts
-`npm run lint` · `npm run test` · `npm run test:e2e` · `npm run build && npm run start`
+## Subir a GitHub y publicar (GitHub Pages)
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin <URL_DEL_REPO>
+git push -u origin main
+```
+1. En GitHub: **Settings → Pages → Source: GitHub Actions**.
+2. Cada push a `main` corre lint, tests y build, y publica en `https://<usuario>.github.io/<repo>/`.
+3. Si el repo se llama `<usuario>.github.io`, cambia `NEXT_PUBLIC_BASE_PATH` en `.github/workflows/deploy.yml` a vacío (`""`).
+4. Tras tu primer `npm install`, sube también `package-lock.json`.
 
 ## Estructura
-- `services/wallet` — único punto que modifica saldo (transacciones Prisma, historial)
-- `services/casino` — blackjack y ruleta (el servidor es la autoridad; baraja y resultado nunca salen del backend)
-- `services/sports` — liquidación de pronósticos
-- `app/api` — API REST · `components/` — UI · `prisma/` — esquema y seed · `tests/` — unit y e2e
-
-## Seguridad
-Contraseñas con bcrypt, JWT firmado con `AUTH_SECRET`, validación Zod en cada endpoint, rate limiting en login/registro (en memoria; usa Redis al desplegar en varias instancias), roles USER/ADMIN, headers de seguridad en `next.config.ts`. Nunca subas `.env`.
-
-## Estado
-Implementado: API completa de juego/pronósticos, blackjack, ruleta, ranking, inicio, seed, CI y Docker.
-Pendiente: pantallas de pronósticos/boleto, wallet, dashboard, equipos, estadísticas y admin; PWA/SEO; más tests.
+- `lib/store.ts` — billetera en localStorage (`debit`, `settle`, historial)
+- `lib/play.ts` — acciones de blackjack, ruleta y pronósticos
+- `services/casino` — lógica pura de blackjack y ruleta (con pruebas en `tests/unit`)
+- `lib/data.ts` — equipos y partidos de prueba
+- `app/` — páginas: inicio, pronósticos, blackjack, ruleta, ranking, wallet

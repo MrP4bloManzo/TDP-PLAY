@@ -1,4 +1,4 @@
-import { randomInt } from 'crypto'
+import { randInt } from '../../lib/rng'
 export type RBet = { type: 'red'|'black'|'even'|'odd'|'low'|'high'|'dozen'|'column'|'number'; value?: number; amount: number }
 const REDS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36])
 export const colorOf = (n: number) => n === 0 ? 'green' : REDS.has(n) ? 'red' : 'black'
@@ -13,4 +13,4 @@ export function payoutOf(b: RBet, n: number) {
   if (!win) return 0
   return b.amount * (b.type === 'dozen' || b.type === 'column' ? 3 : 2)
 }
-export const spin = () => randomInt(37)
+export const spin = () => randInt(37)

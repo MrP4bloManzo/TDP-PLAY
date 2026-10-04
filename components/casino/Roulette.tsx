@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
-import { api } from '@/lib/client'
-import AuthGate from '@/components/auth/AuthGate'
+import { useStore } from '@/lib/store'
+import { roulettePlay } from '@/lib/play'
 type Bet = { type: string; value?: number; amount: number }
 const OPTS: [string, string, number?][] = [['red', 'Rojo'], ['black', 'Negro'], ['even', 'Par'], ['odd', 'Impar'], ['low', '1-18'], ['high', '19-36'],
   ['dozen', '1ª docena', 1], ['dozen', '2ª docena', 2], ['dozen', '3ª docena', 3], ['column', 'Col. 1', 1], ['column', 'Col. 2', 2], ['column', 'Col. 3', 3]]
 const BG: Record<string, string> = { red: 'bg-red-600', black: 'bg-zinc-800', green: 'bg-green-600' }
-function Table({ balance, setBalance }: { balance: number; setBalance: (n: number) => void }) {
+export default function Roulette() {
+  const { balance } = useStore()
+  const [shown, setShown] = useState<number | null>(null)
   const [chip, setChip] = useState(50), [bets, setBets] = useState<Bet[]>([]), [num, setNum] = useState(17)
   const [spinning, setSpinning] = useState(false), [rot, setRot] = useState(0), [res, setRes] = useState<any>(null), [msg, setMsg] = useState('')
   const total = bets.reduce((s, b) => s + b.amount, 0)
@@ -14,15 +16,16 @@ function Table({ balance, setBalance }: { balance: number; setBalance: (n: numbe
   const spin = async () => {
     setMsg(''); setRes(null)
     try {
-      const r = await api('/api/casino/roulette/play', { bets })
+      setShown(balance)
+      const r = roulettePlay(bets as any)
       setSpinning(true); setRot(x => x + 1440 + Math.floor(Math.random() * 360))
-      setTimeout(() => { setRes(r); setBalance(r.balance); setBets([]); setSpinning(false) }, 3200)
-    } catch (e) { setMsg((e as Error).message) }
+      setTimeout(() => { setRes(r); setShown(null); setBets([]); setSpinning(false) }, 3200)
+    } catch (e) { setShown(null); setMsg((e as Error).message) }
   }
   return (
     <div className="felt mx-auto max-w-2xl space-y-5 rounded-2xl border border-white/10 p-6">
       <div className="flex items-center justify-between"><h1 className="text-2xl font-extrabold">Ruleta europea</h1>
-        <div className="rounded-lg bg-black/50 px-3 py-1 text-sm">Saldo virtual: <b className="text-green-400">{balance.toLocaleString()} TDP</b></div></div>
+        <div className="rounded-lg bg-black/50 px-3 py-1 text-sm">Saldo virtual: <b className="text-green-400">{(shown ?? balance).toLocaleString()} TDP</b></div></div>
       <div className="flex flex-col items-center gap-3">
         <div className="relative h-44 w-44 rounded-full border-4 border-yellow-600/70" style={{ background: 'conic-gradient(#16a34a 0 10deg,#dc2626 10deg 20deg,#27272a 20deg 30deg,#dc2626 30deg 40deg,#27272a 40deg 50deg,#dc2626 50deg 60deg,#27272a 60deg 70deg,#dc2626 70deg 80deg,#27272a 80deg 90deg,#dc2626 90deg 100deg,#27272a 100deg 110deg,#dc2626 110deg 120deg,#27272a 120deg 360deg)',
           transform: `rotate(${rot}deg)`, transition: spinning ? 'transform 3s cubic-bezier(.1,.7,.2,1)' : 'none' }} />
@@ -40,4 +43,4 @@ function Table({ balance, setBalance }: { balance: number; setBalance: (n: numbe
       <p className="text-center text-xs text-white/40">Simulación · Las TDP Coins no tienen valor monetario</p>
     </div>)
 }
-export default function Roulette() { return <AuthGate>{(b, set) => <Table balance={b} setBalance={set} />}</AuthGate> }
+

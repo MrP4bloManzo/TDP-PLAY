@@ -1,10 +1,10 @@
-import { randomInt } from 'crypto'
+import { randInt } from '../../lib/rng'
 export type Card = { r: string; s: string }
 export type BJ = { deck: Card[]; player: Card[]; dealer: Card[]; bet: number; done: boolean; result?: string; payout?: number }
 const R = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'], S = ['♠','♥','♦','♣']
 function shuffled(): Card[] {
   const d = S.flatMap(s => R.map(r => ({ r, s })))
-  for (let i = d.length - 1; i > 0; i--) { const j = randomInt(i + 1); [d[i], d[j]] = [d[j], d[i]] }
+  for (let i = d.length - 1; i > 0; i--) { const j = randInt(i + 1); [d[i], d[j]] = [d[j], d[i]] }
   return d
 }
 export function score(h: Card[]) {
