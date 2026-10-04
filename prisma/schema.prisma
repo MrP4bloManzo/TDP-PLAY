@@ -1,0 +1,106 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"
+  url = env("DATABASE_URL") }
+
+enum Role { USER ADMIN }
+
+model User {
+  id String @id @default(cuid())
+  username String @unique
+  email String @unique
+  name String
+  passwordHash String
+  role Role @default(USER)
+  level Int @default(1)
+  createdAt DateTime @default(now())
+  wallet Wallet?
+  transactions WalletTransaction[]
+  predictions Prediction[]
+  blackjack BlackjackGame[]
+  roulette RouletteGame[]
+}
+// TDP Coins: moneda ficticia, sin valor monetario.
+model Wallet {
+  userId String @id
+  balance Int @default(10000)
+  currency String @default("TDP")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model WalletTransaction {
+  id Int @id @default(autoincrement())
+  userId String
+  game String
+  stake Int
+  payout Int
+  net Int
+  balanceAfter Int
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+model Group { id Int @id @default(autoincrement())
+  name String
+  teams Team[] }
+model Team {
+  id Int @id @default(autoincrement())
+  name String
+  state String
+  groupId Int
+  group Group @relation(fields: [groupId], references: [id])
+  homeMatches Match[] @relation("home")
+  awayMatches Match[] @relation("away")
+}
+model Match {
+  id Int @id @default(autoincrement())
+  homeId Int
+  awayId Int
+  date DateTime
+  stadium String
+  status String @default("SCHEDULED") // SCHEDULED | FINISHED
+  homeGoals Int?
+  awayGoals Int?
+  home Team @relation("home", fields: [homeId], references: [id])
+  away Team @relation("away", fields: [awayId], references: [id])
+  markets PredictionMarket[]
+}
+model PredictionMarket {
+  id Int @id @default(autoincrement())
+  matchId Int
+  type String      // 1X2 | OU25 | BTTS
+  selection String // HOME DRAW AWAY | OVER UNDER | YES NO
+  odds Float       // cuota virtual
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  predictions Prediction[]
+  @@unique([matchId, type, selection])
+}
+model Prediction {
+  id Int @id @default(autoincrement())
+  code String @unique
+  userId String
+  marketId Int
+  stake Int
+  odds Float
+  status String @default("PENDING") // PENDING | WON | LOST
+  payout Int @default(0)
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id])
+  market PredictionMarket @relation(fields: [marketId], references: [id])
+}
+model BlackjackGame {
+  id String @id @default(cuid())
+  userId String
+  bet Int
+  state Json
+  status String @default("ACTIVE") // ACTIVE | LOCK | DONE
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id])
+}
+model RouletteGame {
+  id Int @id @default(autoincrement())
+  userId String
+  bets Json
+  number Int
+  net Int
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id])
+}
