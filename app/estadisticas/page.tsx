@@ -1,0 +1,7 @@
+import { AppShell } from '@/components/layout/AppShell';
+import { PerformanceChart } from '@/components/charts/PerformanceChart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { prisma } from '@/lib/db/prisma';
+
+export default async function StatsPage(){const teams=await prisma.team.findMany({orderBy:{points:'desc'},take:8});const data=teams.map(t=>({name:t.shortName,value:t.points}));const totals=teams.reduce((a,t)=>({gf:a.gf+t.goalsFor,ga:a.ga+t.goalsAgainst,w:a.w+t.wins,d:a.d+t.draws,l:a.l+t.losses}),{gf:0,ga:0,w:0,d:0,l:0});return <AppShell><h1 className="text-3xl font-black">Estadísticas</h1><p className="mt-1 text-sm text-white/45">Métricas demo inspiradas en un entorno de competición.</p><div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_.8fr]"><Card><CardHeader><CardTitle>Puntos por equipo</CardTitle></CardHeader><CardContent><PerformanceChart data={data}/></CardContent></Card><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"><Metric label="Goles a favor" value={String(totals.gf)}/><Metric label="Victorias" value={String(totals.w)}/><Metric label="Empates" value={String(totals.d)}/><Metric label="Derrotas" value={String(totals.l)}/></div></div></AppShell>}
+function Metric({label,value}:{label:string;value:string}){return <Card><CardContent><div className="text-xs text-white/35">{label}</div><div className="mt-1 text-2xl font-black text-green-300">{value}</div></CardContent></Card>}

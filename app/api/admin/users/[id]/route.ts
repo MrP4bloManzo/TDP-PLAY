@@ -1,0 +1,8 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth/session';
+import { prisma } from '@/lib/db/prisma';
+const schema=z.object({name:z.string().min(2).max(80).optional(),username:z.string().min(3).max(24).regex(/^[a-zA-Z0-9_]+$/).optional(),role:z.enum(['USER','ADMIN']).optional(),level:z.number().int().min(1).max(100).optional(),password:z.string().min(8).max(72).optional()});
+export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){const admin=await requireAdmin();const {id}=await params;try{const input=schema.parse(await request.json());const {password,...rest}=input;const data:any={...rest};if(password)data.passwordHash=await bcrypt.hash(password,12);const user=await prisma.user.update({where:{id},data,select:{id:true,name:true,username:true,email:true,role:true,level:true}});await prisma.adminAction.create({data:{adminId:admin.id,action:'USER_UPDATE',targetId:id,metadata:rest}});return NextResponse.json({user});}catch(error:any){return NextResponse.json({error:error?.message??'No se pudo actualizar el usuario.'},{status:400});}}
+export async function DELETE(_request:Request,{params}:{params:Promise<{id:string}>}){const admin=await requireAdmin();const {id}=await params;if(id===admin.id)return NextResponse.json({error:'No puedes eliminar tu propia cuenta administrativa.'},{status:409});try{await prisma.user.delete({where:{id}});await prisma.adminAction.create({data:{adminId:admin.id,action:'USER_DELETE',targetId:id}});return NextResponse.json({ok:true});}catch(error:any){return NextResponse.json({error:error?.message??'No se pudo eliminar el usuario.'},{status:409});}}

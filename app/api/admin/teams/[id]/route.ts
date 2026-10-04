@@ -1,0 +1,7 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { requireAdmin } from '@/lib/auth/session';
+import { prisma } from '@/lib/db/prisma';
+const schema=z.object({name:z.string().min(2).max(80).optional(),shortName:z.string().min(2).max(5).optional(),badgeColor:z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),groupId:z.string().min(1).optional(),wins:z.number().int().min(0).optional(),draws:z.number().int().min(0).optional(),losses:z.number().int().min(0).optional(),goalsFor:z.number().int().min(0).optional(),goalsAgainst:z.number().int().min(0).optional(),points:z.number().int().min(0).optional()});
+export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){const admin=await requireAdmin();const {id}=await params;try{const data=schema.parse(await request.json());const team=await prisma.team.update({where:{id},data});await prisma.adminAction.create({data:{adminId:admin.id,action:'TEAM_UPDATE',targetId:id,metadata:data}});return NextResponse.json({team});}catch(error:any){return NextResponse.json({error:error?.message??'No se pudo actualizar el equipo.'},{status:400});}}
+export async function DELETE(_request:Request,{params}:{params:Promise<{id:string}>}){const admin=await requireAdmin();const {id}=await params;try{await prisma.team.delete({where:{id}});await prisma.adminAction.create({data:{adminId:admin.id,action:'TEAM_DELETE',targetId:id}});return NextResponse.json({ok:true});}catch(error:any){return NextResponse.json({error:error?.message??'No se puede eliminar el equipo.'},{status:409});}}

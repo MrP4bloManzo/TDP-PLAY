@@ -1,0 +1,9 @@
+import Link from 'next/link';
+import { AppShell } from '@/components/layout/AppShell';
+import { requireAdmin } from '@/lib/auth/session';
+import { prisma } from '@/lib/db/prisma';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdminConsole } from '@/components/admin/AdminConsole';
+
+export default async function AdminPage(){await requireAdmin();const [users,teams,matches,preds,bjs,roulettes]=await Promise.all([prisma.user.count(),prisma.team.count(),prisma.match.count(),prisma.prediction.count(),prisma.blackjackGame.count(),prisma.rouletteGame.count()]);return <AppShell><div className="flex items-end justify-between"><div><div className="text-sm text-green-400">ADMIN</div><h1 className="text-3xl font-black">Panel administrador</h1></div><Link href="/dashboard" className="text-sm text-white/45">Volver al dashboard</Link></div><div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{[['Usuarios',users],['Equipos',teams],['Partidos',matches],['Pronósticos',preds],['Blackjack',bjs],['Ruleta',roulettes]].map(([label,value])=><Card key={String(label)}><CardContent><div className="text-xs text-white/35">{label}</div><div className="mt-1 text-2xl font-black">{value}</div></CardContent></Card>)}</div><div className="mt-6 grid gap-5 lg:grid-cols-2"><AdminBox title="Gestión de contenido" links={[['Equipos','/equipos'],['Partidos','/partidos'],['Usuarios','/api/admin/users']]}/><AdminBox title="Herramientas" links={[['Estadísticas','/estadisticas'],['Ranking','/ranking'],['API stats','/api/admin/statistics']]}/></div><AdminConsole /></AppShell>}
+function AdminBox({title,links}:{title:string;links:[string,string][]}){return <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent className="space-y-2">{links.map(([label,href])=><Link key={href} href={href} className="block rounded-xl bg-white/[.03] px-3 py-3 text-sm hover:bg-white/[.06]">{label}</Link>)}</CardContent></Card>}
